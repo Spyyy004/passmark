@@ -1,0 +1,119 @@
+import { LanguageModel } from "ai";
+import {
+  Expect,
+  type Page,
+  PlaywrightTestArgs,
+  PlaywrightTestOptions,
+  PlaywrightWorkerArgs,
+  PlaywrightWorkerOptions,
+  TestType,
+} from "@playwright/test";
+
+export type AssertionResult = {
+  assertionPassed: boolean;
+  confidenceScore: number; // Between 0 and 100
+  reasoning: string; // Brief explanation of the reasoning behind the assertion
+};
+
+export type UserFlowOptions = {
+  page: Page;
+  userFlow: string;
+  steps: string;
+  website: string;
+
+  // optional fields
+  assertion?: string;
+  effort?: "low" | "high";
+  thinkingBudget?: number; // in tokens, default 1024
+  auth?: {
+    email: string;
+    password: string;
+  };
+  model?: LanguageModel;
+};
+
+/**
+ * Configuration for extracting data from a page using AI.
+ * The extracted value will be stored as {{run.keyName}} and can be used in subsequent steps.
+ */
+export type ExtractionConfig = {
+  /** Key name - the extracted value will be accessible as {{run.keyName}} in subsequent steps' data.value */
+  as: string;
+  /** Prompt describing what to extract from the page/URL */
+  prompt: string;
+};
+
+export type Step = {
+  bypassCache?: boolean;
+  description: string;
+  data?: Record<string, string>;
+  waitUntil?: string;
+  isScript?: boolean;
+  script?: string;
+  moduleId?: string;
+  /** Extract data from page/URL using AI and store as {{run.as}} for later use */
+  extract?: ExtractionConfig;
+};
+
+export type AssertionOptions = {
+  page: Page;
+  assertion: string;
+  failSilently?: boolean;
+  test?: TestType<
+    PlaywrightTestArgs & PlaywrightTestOptions,
+    PlaywrightWorkerArgs & PlaywrightWorkerOptions
+  >;
+  expect: Expect<{}>;
+  effort?: "low" | "high";
+  images?: string[];
+};
+
+export type WaitConditionResult = {
+  conditionMet: boolean;
+  reasoning: string;
+};
+
+export type WaitForConditionOptions = {
+  page: Page;
+  condition: string;
+  pageScreenshotBeforeApplyingAction: string;
+  previousSteps?: Step[];
+  currentStep: Step;
+  nextStep?: Step;
+  initialInterval?: number; // Initial wait interval in ms which will be increased exponentially
+  timeout?: number; // We'll stop trying after this time
+  maxInterval?: number; // Maximum wait interval in ms
+};
+
+export type RunStepsOptions = {
+  projectId?: string;
+  page: Page;
+  test?: TestType<
+    PlaywrightTestArgs & PlaywrightTestOptions,
+    PlaywrightWorkerArgs & PlaywrightWorkerOptions
+  >;
+  userFlow: string;
+  steps: Step[];
+
+  // optional fields
+  bypassCache?: boolean;
+  failAssertionsSilently?: boolean;
+  auth?: { email: string; password: string };
+  onStepStart?: (step: { id: string; description: string }) => void;
+  onStepEnd?: (step: { id: string; description: string }) => void;
+  onReasoning?: (step: { id: string; reasoning: string }) => void;
+
+  /**
+   * Execution ID to link multiple runSteps calls together.
+   * When provided, {{global.*}} placeholders are persisted to Redis
+   * and shared across all runSteps calls with the same executionId.
+   * Required when using {{global.*}} placeholders.
+   */
+  executionId?: string;
+} & (
+  | {
+      assertions: Omit<AssertionOptions, "page" | "test" | "expect">[];
+      expect: Expect<{}>;
+    }
+  | { assertions?: never; expect?: never }
+);
