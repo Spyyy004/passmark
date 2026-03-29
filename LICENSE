@@ -1,29 +1,31 @@
 Functional Source License, Version 1.1, Apache 2.0 Future License
 
-Copyright 2025 Bug0, Inc.
+Copyright 2026 LinearBytes Inc.
+
+Bug0 is a product of LinearBytes Inc.
 
 Parameters
 
-Licensor:             Bug0, Inc.
-Licensed Work:        Passmark
-                      The Licensed Work is (c) 2025 Bug0, Inc.
+Licensor:             LinearBytes Inc
+Licensed Work:        Passmark (Bug0)
+                      The Licensed Work is (c) 2026 LinearBytes Inc.
 Additional Use Grant: You may make production use of the Licensed Work,
                       provided such use does not include offering the
                       Licensed Work to third parties on a hosted or
                       embedded basis in a manner that competes with
                       Bug0's paid products or services.
 
-Change Date:          The earlier of 2027-03-27 or a date specified at
-                      https://github.com/nicepkg/passmark/blob/main/LICENSE
+Change Date:          The earlier of 2030-03-27 or a date specified at
+                      https://github.com/bug0inc/passmark/blob/main/LICENSE
 
 Change License:       Apache License, Version 2.0
 
 For information about alternative licensing arrangements for the Licensed Work,
-please contact: licensing@bug0.dev
+please contact: hi@bug0.com
 
 Notice
 
-Business Source License 1.1 is not an Open Source license. However, the
+Functional Source License (FSL) 1.1 is not an Open Source license. However, the
 Licensed Work will eventually be made available under an Open Source license,
 as stated in this License.
 
@@ -40,13 +42,13 @@ FSL-1.1-Apache-2.0
 
 Notice
 
-Copyright 2025 Bug0, Inc.
+Copyright 2026 LinearBytes Inc.
 
 Terms and Conditions
 
 Licensor ("We")
 
-The individual or entity offering these terms, Bug0, Inc.
+The individual or entity offering these terms, LinearBytes Inc.
 
 The Licensed Work
 
