@@ -393,6 +393,11 @@ export const runSteps = async ({
                   thinkingLevel: "medium",
                 },
               },
+              openrouter: {
+                reasoning: {
+                  effort: "medium",
+                },
+              },
             },
             onStepFinish: async ({ toolCalls }) => {
               if (!onReasoning) return;
@@ -586,6 +591,11 @@ export const runUserFlow = async ({
             google: {
               thinkingConfig: {
                 thinkingBudget,
+              },
+            },
+            openrouter: {
+              reasoning: {
+                max_tokens: thinkingBudget,
               },
             },
           },

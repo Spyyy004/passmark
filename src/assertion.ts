@@ -136,6 +136,9 @@ Never hallucinate. Be truthful and if you are not sure, use a low confidence sco
             anthropic: {
               thinking: { type: "enabled", budgetTokens: THINKING_BUDGET_DEFAULT },
             },
+            openrouter: {
+              reasoning: { max_tokens: THINKING_BUDGET_DEFAULT },
+            },
           }
           : undefined,
         messages,
@@ -163,6 +166,9 @@ Never hallucinate. Be truthful and if you are not sure, use a low confidence sco
               thinkingConfig: {
                 thinkingBudget: THINKING_BUDGET_DEFAULT,
               },
+            },
+            openrouter: {
+              reasoning: { max_tokens: THINKING_BUDGET_DEFAULT },
             },
           }
           : undefined,
@@ -241,6 +247,9 @@ Please carefully review the evidence (screenshot and accessibility snapshot (whe
             thinkingConfig: {
               thinkingBudget: THINKING_BUDGET_DEFAULT,
             },
+          },
+          openrouter: {
+            reasoning: { max_tokens: THINKING_BUDGET_DEFAULT },
           },
         },
         messages: arbiterMessages,

@@ -23,6 +23,9 @@ importers:
       '@faker-js/faker':
         specifier: ^10.1.0
         version: 10.4.0
+      '@openrouter/ai-sdk-provider':
+        specifier: ^2.5.1
+        version: 2.5.1(ai@6.0.154(zod@4.3.6))(zod@4.3.6)
       '@opentelemetry/api':
         specifier: ^1.9.0
         version: 1.9.1
@@ -276,6 +279,13 @@ packages:
 
   '@next/env@15.5.14':
     resolution: {integrity: sha512-aXeirLYuASxEgi4X4WhfXsShCFxWDfNn/8ZeC5YXAS2BB4A8FJi1kwwGL6nvMVboE7fZCzmJPNdMvVHc8JpaiA==}
+
+  '@openrouter/ai-sdk-provider@2.5.1':
+    resolution: {integrity: sha512-r1fJL1Cb3gQDa2MpWH/sfx1BsEW0uzlRriJM6eihaKqbtKDmZoBisF32VcVaQYassighX7NGCkF68EsrZA43uQ==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      ai: ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
 
   '@opentelemetry/api-logs@0.202.0':
     resolution: {integrity: sha512-fTBjMqKCfotFWfLzaKyhjLvyEyq5vDKTTFfBmx21btv3gvy8Lq6N5Dh2OzqeuN4DjtpSvNT1uNVfg08eD2Rfxw==}
@@ -2388,6 +2398,11 @@ snapshots:
     optional: true
 
   '@next/env@15.5.14': {}
+
+  '@openrouter/ai-sdk-provider@2.5.1(ai@6.0.154(zod@4.3.6))(zod@4.3.6)':
+    dependencies:
+      ai: 6.0.154(zod@4.3.6)
+      zod: 4.3.6
 
   '@opentelemetry/api-logs@0.202.0':
     dependencies:

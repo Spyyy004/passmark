@@ -19,9 +19,14 @@ describe("config", () => {
     expect(getConfig().email).toEqual(email);
   });
 
-  it("configure sets ai.gateway", () => {
+  it("configure sets ai.gateway to vercel", () => {
     configure({ ai: { gateway: "vercel" } });
     expect(getConfig().ai?.gateway).toBe("vercel");
+  });
+
+  it("configure sets ai.gateway to openrouter", () => {
+    configure({ ai: { gateway: "openrouter" } });
+    expect(getConfig().ai?.gateway).toBe("openrouter");
   });
 
   it("configure merges without overwriting other keys", () => {
