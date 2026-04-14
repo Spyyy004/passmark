@@ -1,7 +1,7 @@
 <h1 align="center">
     <img src=".github/passmark-logo.png" alt="Passmark" width="500" />
     <br>
-    <small>The open-source AI library for regression testing.</small>
+    <small>The open-source Playwright library for AI regression testing.</small>
 </h1>
 
 <p align="center">
@@ -12,9 +12,9 @@
     <a href="https://github.com/bug0inc/passmark/blob/main/LICENSE.md"><img src="https://img.shields.io/badge/license-FSL--1.1--ALv2-blue" alt="License"></a>
 </p>
 
-Passmark covers your regression testing end-to-end and **helps you catch regressions early. Fast.**
+Passmark covers your browser regression testing end-to-end and **helps you catch regressions early. Fast.**
 
-It uses AI models to execute natural language steps via Playwright, with intelligent caching, auto-healing, and multi-model assertion verification. Your tests stay stable without needing to update AI prompts or retrain models.
+It uses AI models to execute natural language browser steps via Playwright, with intelligent caching, auto-healing, and multi-model assertion verification. Your tests stay stable without needing to update AI prompts or retrain models.
 
 ## Quick Start
 
