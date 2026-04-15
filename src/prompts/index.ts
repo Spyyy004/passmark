@@ -73,6 +73,7 @@ Use the following data for the current step:
     - In case you are confused, you can also take a screenshot of the page to visually inspect the current state.
     - [CRITICAL] Do not perform multiple steps. Your objective is to perform only the current step specified above and stop right after that.
     - For file uploads, use \`browser_upload_file\` tool with ref of the file upload button from the snapshot.
+    - [CRITICAL] Do not use browser_navigate tool unless there is an explicit instruction to navigate in the **step description**.
     </Instructions>
     `;
 };

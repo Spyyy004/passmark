@@ -5,7 +5,7 @@ import { ASSERTION_MODEL_TIMEOUT, THINKING_BUDGET_DEFAULT } from "./constants";
 import { logger } from "./logger";
 import { resolveModel } from "./models";
 import { AssertionResult, AssertionOptions } from "./types";
-import { safeSnapshot, withTimeout } from "./utils";
+import { resolvePage, safeSnapshot, withTimeout } from "./utils";
 
 const assertionSchema = z.object({
   assertionPassed: z.boolean().describe("Indicates whether the assertion passed or not."),
@@ -65,7 +65,7 @@ export const assert = async ({
       : [
         {
           type: "image" as const,
-          image: (await page.screenshot({ fullPage: false })).toString("base64"),
+          image: (await resolvePage(page).screenshot({ fullPage: false })).toString("base64"),
         },
       ];
 

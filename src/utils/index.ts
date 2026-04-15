@@ -12,7 +12,22 @@ import { z } from "zod";
 import { getModelId } from "../config";
 import { logger } from "../logger";
 import { resolveModel } from "../models";
-import { WaitConditionResult, WaitForConditionOptions } from "../types";
+import {
+  PageInput,
+  WaitConditionResult,
+  WaitForConditionOptions,
+} from "../types";
+import type { TabManager } from "./tab-manager";
+
+/**
+ * Resolves a `Page | TabManager` to the currently-active Playwright Page.
+ * Call this every time you need the page, so tab-switches mid-operation
+ * (e.g. during a polling wait) are reflected on the very next access.
+ */
+export const resolvePage = (input: PageInput): Page =>
+  typeof (input as TabManager).active === "function"
+    ? (input as TabManager).active()
+    : (input as Page);
 import {
   DOM_STABILIZATION_IDLE,
   DOM_STABILIZATION_TIMEOUT,
@@ -48,9 +63,9 @@ export const withTimeout = <T>(
   });
 };
 
-export const safeSnapshot = async (page: Page, timeout = SNAPSHOT_TIMEOUT) => {
+export const safeSnapshot = async (input: PageInput, timeout = SNAPSHOT_TIMEOUT) => {
   const attempt = async () => {
-    return await page.ariaSnapshot({ mode: "ai", timeout });
+    return await resolvePage(input).ariaSnapshot({ mode: "ai", timeout });
   }
 
   try {
@@ -86,7 +101,7 @@ export function flowKey(
   return `${prefix}:${short}`;
 }
 
-export async function runLocatorCode(page: Page, code: string): Promise<void> {
+export async function runLocatorCode(input: PageInput, code: string): Promise<void> {
   const fn = new Function(
     "page",
     `
@@ -96,7 +111,7 @@ export async function runLocatorCode(page: Page, code: string): Promise<void> {
         `,
   ) as (page: Page) => Promise<void>;
 
-  return fn(page);
+  return fn(resolvePage(input));
 }
 
 /**
@@ -107,7 +122,7 @@ export async function runLocatorCode(page: Page, code: string): Promise<void> {
  * @param timeout Maximum time to wait for stabilization (default: 5000ms)
  */
 export async function waitForDOMStabilization(
-  page: Page,
+  input: PageInput,
   test?: TestType<
     PlaywrightTestArgs & PlaywrightTestOptions,
     PlaywrightWorkerArgs & PlaywrightWorkerOptions
@@ -117,7 +132,7 @@ export async function waitForDOMStabilization(
 ): Promise<void> {
   const _waitForStabilization = async () => {
     try {
-      await page.evaluate(
+      await resolvePage(input).evaluate(
         ({ idleTime, timeout }) => {
           return new Promise<void>((resolve) => {
             let timeoutId: ReturnType<typeof setTimeout>;
@@ -166,7 +181,7 @@ export async function waitForDOMStabilization(
         (error instanceof Error && error.message?.includes("navigation"))
       ) {
         // Navigation occurred - wait for the page to be ready
-        await page.waitForLoadState("domcontentloaded").catch(() => { });
+        await resolvePage(input).waitForLoadState("domcontentloaded").catch(() => { });
         return;
       }
       // Re-throw other errors
@@ -238,7 +253,7 @@ export async function waitForCondition({
   let currentInterval = initialInterval;
 
   const checkCondition = async (): Promise<WaitConditionResult> => {
-    const pageScreenshotAfterApplyingAction = (await page.screenshot({ fullPage: false })).toString(
+    const pageScreenshotAfterApplyingAction = (await resolvePage(page).screenshot({ fullPage: false })).toString(
       "base64",
     );
 
@@ -343,18 +358,18 @@ Analyze the attached before and after screenshots and determine if the wait cond
  * Returns true if the action likely succeeded, false if it appears to have silently failed.
  */
 export async function verifyActionEffect(
-  page: Page,
+  input: PageInput,
   action: string,
   snapshotBefore: string,
 ): Promise<{ success: boolean }> {
-  await waitForDOMStabilization(page); // Ensure DOM is stable before taking snapshot
+  await waitForDOMStabilization(input); // Ensure DOM is stable before taking snapshot
 
   // Actions that don't necessarily cause visible changes
   if (action === "hover" || action === "waitForText") {
     return { success: true };
   }
 
-  const snapshotAfter = await safeSnapshot(page);
+  const snapshotAfter = await safeSnapshot(input);
 
   // If snapshots are identical, the action likely had no effect
   if (snapshotBefore.trim() === snapshotAfter.trim()) {

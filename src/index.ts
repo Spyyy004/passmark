@@ -45,6 +45,7 @@ import { extractDataWithAI } from "./extract";
 import { logger } from "./logger";
 import { resolveModel } from "./models";
 import { runSecureScript } from "./utils/secure-script-runner";
+import { createTabManager } from "./utils/tab-manager";
 import {
   CACHED_ACTION_TIMEOUT,
   INITIAL_DOM_STABILIZATION_IDLE,
@@ -103,6 +104,10 @@ export const runSteps = async ({
   failAssertionsSilently,
 }: RunStepsOptions) => {
   executionId = executionId || process.env.executionId;
+
+  // Track all open tabs for this run. The active page is updated automatically
+  // when a new tab opens, or explicitly via the `switchToTab` step field.
+  const tabManager = createTabManager(page);
 
   if (!redis) {
     logger.warn(
@@ -173,6 +178,11 @@ export const runSteps = async ({
       onStepStart({ id, description: step.description });
     }
 
+    // Switch tab before executing the step if requested.
+    if (step.switchToTab !== undefined) {
+      await tabManager.switchTo(step.switchToTab);
+    }
+
     // Script mode: execute script directly, skip AI and cache
     if (step.isScript) {
       if (!step.script) {
@@ -190,7 +200,7 @@ export const runSteps = async ({
 
         if (step.waitUntil) {
           pageScreenshotBeforeApplyingAction = (
-            await page.screenshot({ fullPage: false })
+            await tabManager.active().screenshot({ fullPage: false })
           ).toString("base64");
         }
 
@@ -204,7 +214,7 @@ export const runSteps = async ({
         // Execute script securely using AST-based validation
         // This prevents arbitrary code execution by only allowing safe Playwright method chains
         await runSecureScript({
-          page,
+          page: tabManager,
           script: step.script,
           localValues: localValues as Record<string, string>,
           globalValues: globalValues as Record<string, string> | undefined,
@@ -214,7 +224,7 @@ export const runSteps = async ({
         // Handle waitUntil if specified
         if (step.waitUntil) {
           await waitForCondition({
-            page,
+            page: tabManager,
             condition: step.waitUntil,
             pageScreenshotBeforeApplyingAction,
             previousSteps: processedSteps.slice(0, i),
@@ -226,8 +236,8 @@ export const runSteps = async ({
         // Handle data extraction if specified
         // This is done post script execution
         if (step.extract) {
-          const snapshot = await safeSnapshot(page);
-          const url = page.url();
+          const snapshot = await safeSnapshot(tabManager);
+          const url = tabManager.active().url();
           const extracted = await extractDataWithAI({
             snapshot,
             url,
@@ -295,7 +305,7 @@ export const runSteps = async ({
 
         if (step.waitUntil) {
           pageScreenshotBeforeApplyingAction = (
-            await page.screenshot({ fullPage: false })
+            await tabManager.active().screenshot({ fullPage: false })
           ).toString("base64");
         }
 
@@ -306,11 +316,11 @@ export const runSteps = async ({
          */
         const INITIAL_DOM_STABILIZATION_IDLE_TIME = INITIAL_DOM_STABILIZATION_IDLE;
         if (i === 0) {
-          await waitForDOMStabilization(page, test, INITIAL_DOM_STABILIZATION_IDLE_TIME);
+          await waitForDOMStabilization(tabManager, test, INITIAL_DOM_STABILIZATION_IDLE_TIME);
         }
 
-        const pageSnapshotBeforeApplyingAction = await safeSnapshot(page);
-        await runLocatorCode(page, code);
+        const pageSnapshotBeforeApplyingAction = await safeSnapshot(tabManager);
+        await runLocatorCode(tabManager, code);
 
         /**
          *  Verify that the action had the intended effect on the page. This is because sometimes cached pw action may silently fail.
@@ -322,11 +332,11 @@ export const runSteps = async ({
          *
          *  Auto healing will be triggered if the action did not have any effect on the page.
          */
-        await verifyActionEffect(page, action, pageSnapshotBeforeApplyingAction);
+        await verifyActionEffect(tabManager, action, pageSnapshotBeforeApplyingAction);
 
         if (step.waitUntil) {
           await waitForCondition({
-            page,
+            page: tabManager,
             condition: step.waitUntil,
             pageScreenshotBeforeApplyingAction,
             previousSteps: processedSteps.slice(0, i),
@@ -338,8 +348,8 @@ export const runSteps = async ({
         // Handle data extraction if specified
         // This is done post cached step execution
         if (step.extract) {
-          const snapshot = await safeSnapshot(page);
-          const url = page.url();
+          const snapshot = await safeSnapshot(tabManager);
+          const url = tabManager.active().url();
           const extracted = await extractDataWithAI({
             snapshot,
             url,
@@ -357,10 +367,11 @@ export const runSteps = async ({
 
     const abortController = new AbortController();
 
-    const { tools, getPendingCacheData, clearPendingCacheData } = getAItools(page, {
+    const { tools, getPendingCacheData, clearPendingCacheData } = getAItools(tabManager.active(), {
       currentStep: step,
       abortController,
       test,
+      tabManager,
     });
 
     logger.debug(`Executing Step: ${step.description}`);
@@ -368,7 +379,7 @@ export const runSteps = async ({
     let pageScreenshotBeforeApplyingAction: string = "";
 
     if (step.waitUntil) {
-      pageScreenshotBeforeApplyingAction = (await page.screenshot({ fullPage: false })).toString(
+      pageScreenshotBeforeApplyingAction = (await tabManager.active().screenshot({ fullPage: false })).toString(
         "base64",
       );
     }
@@ -449,7 +460,7 @@ export const runSteps = async ({
 
     if (step.waitUntil) {
       await waitForCondition({
-        page,
+        page: tabManager,
         condition: step.waitUntil,
         pageScreenshotBeforeApplyingAction,
         previousSteps: processedSteps.slice(0, i),
@@ -461,8 +472,8 @@ export const runSteps = async ({
     // Handle data extraction if specified
     // This is done post AI step execution
     if (step.extract) {
-      const snapshot = await safeSnapshot(page);
-      const url = page.url();
+      const snapshot = await safeSnapshot(tabManager);
+      const url = tabManager.active().url();
       const extracted = await extractDataWithAI({
         snapshot,
         url,
@@ -513,7 +524,7 @@ export const runSteps = async ({
       }
 
       const reasoning = await assert({
-        page,
+        page: tabManager,
         assertion,
         test,
         expect,

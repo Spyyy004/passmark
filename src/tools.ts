@@ -14,6 +14,7 @@ import {
   PlaywrightWorkerOptions,
   TestType,
 } from "@playwright/test";
+import type { TabManager } from "./utils/tab-manager";
 
 type ToolSettings = {
   abortController?: AbortController;
@@ -22,6 +23,11 @@ type ToolSettings = {
     PlaywrightTestArgs & PlaywrightTestOptions,
     PlaywrightWorkerArgs & PlaywrightWorkerOptions
   >;
+  /**
+   * Optional tab manager. When provided, tools resolve the active page
+   * dynamically and auto-switch to a newly opened tab after action tools.
+   */
+  tabManager?: TabManager;
 };
 
 // Only wrap tools with Axiom instrumentation when Axiom is configured
@@ -37,6 +43,8 @@ export function getAItools(page: Page, settings?: ToolSettings) {
     try {
       const result = await fn(args);
 
+      // tab-manager's persistent 'page' listener auto-switches active focus
+      // when a new tab opens, so getSnapshot() below targets it automatically.
       const snapshot = await playwrightTools.getSnapshot();
       return { ...result, snapshot };
     } catch (_error) {
@@ -49,7 +57,7 @@ export function getAItools(page: Page, settings?: ToolSettings) {
       "browser_navigate",
       tool({
         description:
-          "Navigate to a URL. This tool should be used only when an explicit instruction to navigate is given",
+          "Navigate to a URL. This tool should be used only when an explicit instruction to navigate is given in a particular step",
         inputSchema: playwrightTools.navigateSchema,
         execute: async (args) => withSnapshot(playwrightTools.navigate.bind(playwrightTools), args),
       }),
@@ -74,19 +82,19 @@ export function getAItools(page: Page, settings?: ToolSettings) {
       "browser_take_screenshot",
       tool({
         description: "Take a screenshot",
-        // @ts-expect-error schema type mismatch with tool() generic
         inputSchema: playwrightTools.screenshotSchema,
-        // @ts-expect-error args type inferred from inputSchema
         execute: async (args) => {
           const fn = playwrightTools.takeScreenshot.bind(playwrightTools);
           const screenshot = await fn(args);
           return screenshot;
         },
-        // @ts-expect-error custom toModelOutput for media content
         toModelOutput: (result) => {
+          const base64 = (typeof result === "string" ? result : result.output) as string;
           return {
             type: "content",
-            value: [{ type: "media", data: result, mediaType: "image/png" }],
+            value: [
+              { type: "media", data: base64, mediaType: "image/png" },
+            ],
           };
         },
       }),
@@ -244,15 +252,21 @@ export function getAItools(page: Page, settings?: ToolSettings) {
 }
 
 class PlaywrightTools {
-  private page: Page;
+  private initialPage: Page;
+  private tabManager?: TabManager;
   private currentStep;
   private abortController?: AbortController;
   public pendingCacheData: Record<string, string> | null = null;
 
-  constructor(page: Page, settings: ToolSettings = {}) {
-    const { currentStep, abortController } = settings;
+  private get page(): Page {
+    return this.tabManager ? this.tabManager.active() : this.initialPage;
+  }
 
-    this.page = page;
+  constructor(page: Page, settings: ToolSettings = {}) {
+    const { currentStep, abortController, tabManager } = settings;
+
+    this.initialPage = page;
+    this.tabManager = tabManager;
     this.currentStep = currentStep;
     this.abortController = abortController;
   }

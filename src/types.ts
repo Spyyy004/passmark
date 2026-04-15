@@ -8,6 +8,9 @@ import {
   PlaywrightWorkerOptions,
   TestType,
 } from "@playwright/test";
+import type { TabManager } from "./utils/tab-manager";
+
+export type PageInput = Page | TabManager;
 
 export type AssertionResult = {
   assertionPassed: boolean;
@@ -52,10 +55,12 @@ export type Step = {
   moduleId?: string;
   /** Extract data from page/URL using AI and store as {{run.as}} for later use */
   extract?: ExtractionConfig;
+  /** Switch the active page before this step runs. 'main' = original tab, 'latest' = most recently opened, or numeric index. */
+  switchToTab?: "main" | "latest" | number;
 };
 
 export type AssertionOptions = {
-  page: Page;
+  page: PageInput;
   assertion: string;
   failSilently?: boolean;
   test?: TestType<
@@ -73,7 +78,7 @@ export type WaitConditionResult = {
 };
 
 export type WaitForConditionOptions = {
-  page: Page;
+  page: PageInput;
   condition: string;
   pageScreenshotBeforeApplyingAction: string;
   previousSteps?: Step[];

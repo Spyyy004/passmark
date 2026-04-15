@@ -2,6 +2,8 @@ import type { Expect, Page } from "@playwright/test";
 import { Node, parse } from "acorn";
 import { lookup } from "node:dns/promises";
 import { logger } from "../logger";
+import { resolvePage } from "./index";
+import type { PageInput } from "../types";
 
 // =============================================================================
 // ALLOWED METHODS CONFIGURATION
@@ -2013,7 +2015,7 @@ function logGetterResult(methodPath: string, result: unknown): void {
 // =============================================================================
 
 export interface RunSecureScriptOptions {
-  page: Page;
+  page: PageInput;
   script: string;
   localValues?: Record<string, string>; // {{run.xxx}} values
   globalValues?: Record<string, string>; // {{global.xxx}} values
@@ -2044,12 +2046,17 @@ export interface RunSecureScriptOptions {
  * });
  */
 export async function runSecureScript({
-  page,
+  page: pageInput,
   script,
   localValues,
   globalValues,
   expect: expectFn,
 }: RunSecureScriptOptions): Promise<unknown> {
+  // Resolve to the currently-active page at script start. Scripts are
+  // short-lived, so we don't re-resolve per-line; if the script itself opens
+  // a tab, the auto-switch happens for subsequent steps, not within the script.
+  const page: Page = resolvePage(pageInput);
+
   // Variable storage for the script context
   const variables = new Map<string, unknown>();
 
