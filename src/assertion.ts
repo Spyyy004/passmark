@@ -55,6 +55,8 @@ export const assert = async ({
   effort = "low",
   images,
   failSilently,
+  maxRetries = 1,
+  onRetry = (retryCount: number, previousResult: AssertionResult) => {},
 }: AssertionOptions): Promise<string> => {
   const thinkingEnabled = effort === "high";
 
@@ -71,7 +73,7 @@ export const assert = async ({
 
     const basePrompt = `
 You are an AI-powered QA Agent designed to test web applications.
-            
+
 You have access to the following information. Based on this information, you'll tell us whether the assertion provided below should pass or not.
 ${!images
         ? `
@@ -312,8 +314,9 @@ Please carefully review the evidence (screenshot and accessibility snapshot (whe
   // Run assertion with retry on failure
   let result = await runFullAssertion();
 
-  if (!result.assertionPassed) {
+  for (let retry = 0; retry < maxRetries && !result.assertionPassed; retry++) {
     logger.debug("Assertion failed, retrying with fresh snapshot and screenshot...");
+    onRetry(retry, result);
     result = await runFullAssertion();
   }
 

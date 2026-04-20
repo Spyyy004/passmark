@@ -65,6 +65,8 @@ export type AssertionOptions = {
   expect: Expect<{}>;
   effort?: "low" | "high";
   images?: string[];
+  maxRetries?: number;
+  onRetry?: (retryCount: number, previousResult: AssertionResult) => void;
 };
 
 export type WaitConditionResult = {
